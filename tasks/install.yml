@@ -1,0 +1,65 @@
+---
+- name: Install redis-server
+  ansible.builtin.apt:
+    name: redis-server
+    state: present
+    update_cache: yes
+  become: true
+  tags: redis-server
+
+- name: Create configuration file for redis-server
+  ansible.builtin.template:
+    src: "redis.conf.j2"
+    dest: "/etc/redis/redis.conf"
+    owner: "{{redis_user}}"
+    group: "{{redis_group}}"
+    mode: "0640"
+  notify: Restart redis-server
+  tags: redis-server
+
+- name: Install prometheus exporter for redis
+  ansible.builtin.apt:
+    name: prometheus-redis-exporter
+    state: present
+    update_cache: yes
+  become: true
+  tags: prometheus-redis-exporter
+
+- name: Replace /etc/default/prometheus-redis-exporter
+  ansible.builtin.template:
+    src: "prometheus-redis-exporter.j2"
+    dest: "/etc/default/prometheus-redis-exporter"
+    owner: "root"
+    group: "root"
+    mode: "0644"
+  notify: Restart prometheus-redis-exporter
+  tags: prometheus-redis-exporter
+  when: prometheus_redis_exporter and redis_server_monitoring_user is defined
+
+- name: Configure connector for zabbix plugin
+  ansible.builtin.lineinfile:
+    path: "/etc/zabbix/zabbix_agent2.d/plugins.d/redis.conf"
+    regexp: "^(.*)Plugins.Redis.Default.Password=(.*)$" # This is a regular expression
+    line: "Plugins.Redis.Default.Password={{ redis_requirepass }}"
+    state: present
+    backrefs: yes
+  notify: Restart zabbix-agent
+  when: zabbix_redis_plugin and redis_requirepass is defined
+  tags: zabbix-agent
+
+- block:
+    - name: enabled redis-server
+      ansible.builtin.systemd:
+        name: redis-server
+        enabled: yes
+        state: started
+      become: true
+      tags: redis-server
+
+    - name: enabled prometheus-redis-exporter
+      ansible.builtin.systemd:
+        name: prometheus-redis-exporter
+        enabled: yes
+        state: started
+      become: true
+      tags: prometheus-redis-exporter

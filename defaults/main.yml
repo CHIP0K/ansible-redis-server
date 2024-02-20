@@ -1,0 +1,13 @@
+---
+# defaults file for redis-server
+redis_port: "6379" # Default Redis port
+redis_logfile: "/var/log/redis/redis-server.log" # Default Redis log file
+redis_dbfilename: "dump.rdb" # Default Redis database file
+redis_maxmemory: "100mb"
+redis_maxmemory_policy: "allkeys-lru"
+# redis_requirepass: "password" # This is a secret, so it should be defined in the inventory file
+redis_user: "redis"
+redis_group: "redis"
+
+prometheus_redis_exporter: false # Prometheus exporter for Redis
+zabbix_redis_plugin: false # Zabbix plugin for Redis

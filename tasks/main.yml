@@ -1,0 +1,10 @@
+---
+# tasks file for redis-server
+
+- name: import Debian tasks from repository
+  import_tasks: repository.yml
+  when: ansible_distribution_file_variety == 'Debian'
+
+- name: import Debian tasks from install
+  import_tasks: install.yml
+  when: ansible_distribution_file_variety == 'Debian'
